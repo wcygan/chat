@@ -2,6 +2,7 @@ use crate::client::{ClientHandle, ClientId};
 use anyhow::Result;
 
 use crate::internal;
+use common::message::NetworkMessage;
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
@@ -70,13 +71,33 @@ pub async fn main_loop(
             next = recv.recv() => {
                 if let Some(msg) = next {
                     match msg {
-                        _ => todo!("implement the client actions (join, message, leave, etc")
+                        internal::ToServer::Join{ client } => {
+                            data.clients.insert(client.id, client);
+                        },
+
+                        internal::ToServer::Message{ client_id, message} => {
+                            let m = NetworkMessage::message(message);
+                            let mut to_remove = Vec::new();
+                            for (id, client) in data.clients.iter_mut() {
+                                if *id != client_id {
+                                    if let Err(err) = client.send(m.clone()) {
+                                        to_remove.push(*id);
+                                    }
+                                }
+                            }
+
+                            for id in to_remove {
+                                data.clients.remove(&id);
+                            }
+                        },
+                        internal::ToServer::FatalError(err) => {
+                            return Err(anyhow::anyhow!("{}", err));
+                        },
                     }
                 }
             },
             _ = monitor.recv() => {
                 println!("Shutting down server");
-                // TODO: kill all clients
                 return Ok(());
             },
         }

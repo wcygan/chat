@@ -26,6 +26,7 @@ pub async fn accept_loop(bind: SocketAddr, server: ServerHandle) -> Result<(), i
 
     loop {
         let (tcp, ip) = listen.accept().await?;
+        println!("New connection from {}", ip);
 
         let id = server.next_id();
 

@@ -3,6 +3,7 @@ use crate::server::ServerHandle;
 use anyhow::Result;
 use common::message::NetworkMessage;
 use connection::Connection;
+use std::io;
 use std::net::SocketAddr;
 use tokio::sync::mpsc::{channel, Receiver, Sender};
 use tokio::sync::oneshot;
@@ -18,6 +19,16 @@ pub struct ClientHandle {
     ip: SocketAddr,
     chan: Sender<NetworkMessage>,
     kill: JoinHandle<()>,
+}
+
+impl ClientHandle {
+    pub fn send(&mut self, msg: NetworkMessage) -> Result<()> {
+        if self.chan.try_send(msg).is_err() {
+            Err(io::Error::new(io::ErrorKind::Other, "Client has shut down.").into())
+        } else {
+            Ok(())
+        }
+    }
 }
 
 impl Drop for ClientHandle {

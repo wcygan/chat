@@ -15,11 +15,8 @@ async fn main() -> Result<()> {
     let shutdown = tokio_utils::ShutdownController::new();
     run(Client::new(conn, &shutdown));
 
-    select! {
-        _ = tokio::signal::ctrl_c() => {
-            shutdown.shutdown().await;
-        }
-    }
+    tokio::signal::ctrl_c().await?;
+    shutdown.shutdown().await;
 
     Ok(())
 }
