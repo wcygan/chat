@@ -1,0 +1,14 @@
+[workspace]
+members = [
+    "client",
+    "server",
+    "common"
+]
+
+[workspace.dependencies]
+anyhow = "1.0.70"
+serde = { version = "1.0.159", features = ["derive"] }
+clap = { version = "4.2.1", features = ["derive"] }
+tokio = { version = "1.27.0", features = ["full"] }
+tokio-utils = "0.1.2"
+connection = "0.2.5"
