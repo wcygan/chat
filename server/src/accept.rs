@@ -8,9 +8,14 @@ use crate::client::{spawn_client, ClientInfo};
 use crate::internal;
 use common::message::NetworkMessage;
 use tokio::net::TcpListener;
+use tokio_utils::ShutdownController;
 
-pub async fn start_accept(bind: SocketAddr, mut handle: ServerHandle) {
-    let res = accept_loop(bind, handle.clone()).await;
+pub async fn start_accept(
+    bind: SocketAddr,
+    mut handle: ServerHandle,
+    shutdown: &ShutdownController,
+) {
+    let res = accept_loop(bind, handle.clone(), shutdown).await;
     match res {
         Ok(()) => {}
         Err(err) => {
@@ -21,7 +26,11 @@ pub async fn start_accept(bind: SocketAddr, mut handle: ServerHandle) {
     }
 }
 
-pub async fn accept_loop(bind: SocketAddr, server: ServerHandle) -> Result<(), io::Error> {
+pub async fn accept_loop(
+    bind: SocketAddr,
+    server: ServerHandle,
+    shutdown: &ShutdownController,
+) -> Result<(), io::Error> {
     let listen = TcpListener::bind(bind).await?;
 
     loop {
@@ -31,6 +40,7 @@ pub async fn accept_loop(bind: SocketAddr, server: ServerHandle) -> Result<(), i
         let id = server.next_id();
 
         let mut client = ClientInfo {
+            shutdown: shutdown.subscribe(),
             ip,
             id,
             tcp: Connection::new(tcp),

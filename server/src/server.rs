@@ -104,19 +104,6 @@ pub async fn main_loop(
             },
             _ = monitor.recv() => {
                 println!("Shutting down server");
-
-                for (_, client) in data.clients.iter_mut() {
-                    println!("Shutting down client");
-                    match client.send(NetworkMessage::Shutdown).await {
-                        Ok(()) => {}
-                        Err(err) => {
-                            println!("Error shutting down client: {}", err);
-                        }
-                    }
-                }
-
-                println!("Server shutdown complete.");
-
                 return Ok(());
             },
         }

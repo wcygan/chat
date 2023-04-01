@@ -8,6 +8,7 @@ use std::net::SocketAddr;
 use tokio::sync::mpsc::{channel, Receiver, Sender};
 use tokio::sync::oneshot;
 use tokio::task::JoinHandle;
+use tokio_utils::ShutdownMonitor;
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Hash)]
 pub struct ClientId(pub usize);
@@ -40,13 +41,15 @@ impl Drop for ClientHandle {
 }
 
 pub struct ClientInfo {
+    pub shutdown: ShutdownMonitor,
     pub ip: SocketAddr,
     pub id: ClientId,
     pub server: ServerHandle,
     pub tcp: Connection,
 }
 
-struct ClientData {
+struct Client {
+    shutdown: ShutdownMonitor,
     id: ClientId,
     server: ServerHandle,
     rx: Receiver<NetworkMessage>,
@@ -57,7 +60,8 @@ struct ClientData {
 pub fn spawn_client(info: ClientInfo) {
     let (send, recv) = channel(64);
 
-    let data = ClientData {
+    let data = Client {
+        shutdown: info.shutdown,
         id: info.id,
         server: info.server.clone(),
         conn: info.tcp,
@@ -77,7 +81,7 @@ pub fn spawn_client(info: ClientInfo) {
     let _ = my_send.send(handle);
 }
 
-async fn start_client(my_handle: oneshot::Receiver<ClientHandle>, mut data: ClientData) {
+async fn start_client(my_handle: oneshot::Receiver<ClientHandle>, mut data: Client) {
     let my_handle = match my_handle.await {
         Ok(my_handle) => my_handle,
         Err(_) => return,
@@ -95,9 +99,14 @@ async fn start_client(my_handle: oneshot::Receiver<ClientHandle>, mut data: Clie
 }
 
 /// This method performs the actual job of running the client actor.
-async fn client_loop(mut data: ClientData) -> Result<()> {
+async fn client_loop(mut data: Client) -> Result<()> {
     loop {
         tokio::select! {
+            _ = data.shutdown.recv() => {
+                data.conn.write::<NetworkMessage>(&NetworkMessage::Shutdown).await?;
+                println!("Client {} has shut down.", data.id.0);
+                return Ok(());
+            }
             msg = data.rx.recv() => {
                 println!("Received message from server.");
                 if let Some(msg) = msg {

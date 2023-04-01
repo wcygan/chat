@@ -15,11 +15,8 @@ async fn main() -> Result<()> {
     let shutdown = tokio_utils::ShutdownController::new();
     let (handle, join) = server::spawn_main_loop(&shutdown);
 
-    tokio::spawn(async move {
-        accept::start_accept(addr, handle).await;
-    });
-
     select! {
+        _ = accept::start_accept(addr, handle, &shutdown) => {}
         _ = join => {}
         _ = tokio::signal::ctrl_c() => {
             shutdown.shutdown().await;
