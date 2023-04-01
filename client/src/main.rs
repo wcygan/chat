@@ -11,6 +11,7 @@ mod client;
 #[tokio::main(flavor = "current_thread")]
 async fn main() -> Result<()> {
     let args = Args::parse();
+    println!("connecting to {}", args.address);
     let conn = Connection::dial(args.address).await?;
     let shutdown = tokio_utils::ShutdownController::new();
     let mut client = Client::new(conn, &shutdown);

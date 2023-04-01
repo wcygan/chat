@@ -12,6 +12,7 @@ mod server;
 async fn main() -> Result<()> {
     let args = args::Args::parse();
     let addr = format!("127.0.0.1:{}", args.port).parse()?;
+    println!("listening on {}", addr);
     let shutdown = tokio_utils::ShutdownController::new();
     let (handle, join) = server::spawn_main_loop(&shutdown);
 
