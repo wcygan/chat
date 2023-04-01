@@ -6,7 +6,7 @@ use crate::server::ServerHandle;
 
 use crate::client::{spawn_client, ClientInfo};
 use crate::internal;
-use common::message::NetworkMessage;
+
 use tokio::net::TcpListener;
 use tokio_utils::ShutdownController;
 
@@ -39,7 +39,7 @@ pub async fn accept_loop(
 
         let id = server.next_id();
 
-        let mut client = ClientInfo {
+        let client = ClientInfo {
             shutdown: shutdown.subscribe(),
             ip,
             id,

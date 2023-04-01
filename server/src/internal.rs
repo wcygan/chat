@@ -19,8 +19,4 @@ impl ToServer {
     pub fn join(client: ClientHandle) -> Self {
         Self::Join { client }
     }
-
-    pub fn fatal_error(err: String) -> Self {
-        Self::FatalError(err)
-    }
 }

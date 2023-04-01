@@ -80,7 +80,7 @@ pub async fn main_loop(
                             let mut to_remove = Vec::new();
                             for (id, client) in data.clients.iter_mut() {
                                 if *id != client_id {
-                                    if let Err(err) = client.send(m.clone()).await {
+                                    if let Err(_err) = client.send(m.clone()).await {
                                         to_remove.push(*id);
                                     }
                                 }
