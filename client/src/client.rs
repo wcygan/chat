@@ -28,6 +28,10 @@ impl Client {
                             NetworkMessage::Message { message } => {
                                 println!("{}", message);
                             }
+                            NetworkMessage::Shutdown => {
+                                println!("shutting down!");
+                                return;
+                            }
                         }
                     }
                 }

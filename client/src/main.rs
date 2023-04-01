@@ -13,16 +13,17 @@ async fn main() -> Result<()> {
     let args = Args::parse();
     let conn = Connection::dial(args.address).await?;
     let shutdown = tokio_utils::ShutdownController::new();
-    run(Client::new(conn, &shutdown));
+    let mut client = Client::new(conn, &shutdown);
 
-    tokio::signal::ctrl_c().await?;
-    shutdown.shutdown().await;
+    select! {
+        _ = tokio::signal::ctrl_c() => {
+            println!("ctrl-c received");
+            shutdown.shutdown().await;
+        }
+        _ = tokio::spawn(async move { client.process().await; }) => {
+            println!("client process finished");
+        }
+    }
 
     Ok(())
-}
-
-fn run(mut client: Client) {
-    tokio::spawn(async move {
-        client.process().await;
-    });
 }

@@ -80,7 +80,7 @@ pub async fn main_loop(
                             let mut to_remove = Vec::new();
                             for (id, client) in data.clients.iter_mut() {
                                 if *id != client_id {
-                                    if let Err(err) = client.send(m.clone()) {
+                                    if let Err(err) = client.send(m.clone()).await {
                                         to_remove.push(*id);
                                     }
                                 }
@@ -91,6 +91,12 @@ pub async fn main_loop(
                             }
                         },
                         internal::ToServer::FatalError(err) => {
+
+                            for (_, client) in data.clients.iter_mut() {
+                                println!("Shutting down client");
+                                let _ = client.send(NetworkMessage::Shutdown);
+                            }
+
                             return Err(anyhow::anyhow!("{}", err));
                         },
                     }
@@ -98,6 +104,21 @@ pub async fn main_loop(
             },
             _ = monitor.recv() => {
                 println!("Shutting down server");
+
+                for (_, client) in data.clients.iter_mut() {
+                    println!("Shutting down client");
+                    match client.send(NetworkMessage::Shutdown).await {
+                        Ok(()) => {}
+                        Err(err) => {
+                            println!("Error shutting down client: {}", err);
+                        }
+                    }
+                }
+
+                tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;
+
+                println!("Server shutdown complete.");
+
                 return Ok(());
             },
         }

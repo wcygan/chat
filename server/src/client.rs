@@ -17,15 +17,17 @@ pub struct ClientId(pub usize);
 pub struct ClientHandle {
     pub id: ClientId,
     ip: SocketAddr,
-    chan: Sender<NetworkMessage>,
+    tx: Sender<NetworkMessage>,
     kill: JoinHandle<()>,
 }
 
 impl ClientHandle {
-    pub fn send(&mut self, msg: NetworkMessage) -> Result<()> {
-        if self.chan.try_send(msg).is_err() {
+    pub async fn send(&mut self, msg: NetworkMessage) -> Result<()> {
+        if self.tx.send(msg).await.is_err() {
+            println!("Client {} has shut down.", self.ip);
             Err(io::Error::new(io::ErrorKind::Other, "Client has shut down.").into())
         } else {
+            println!("Sent message to client {}.", self.ip);
             Ok(())
         }
     }
@@ -47,7 +49,7 @@ pub struct ClientInfo {
 struct ClientData {
     id: ClientId,
     server: ServerHandle,
-    recv: Receiver<NetworkMessage>,
+    rx: Receiver<NetworkMessage>,
     conn: Connection,
 }
 
@@ -59,7 +61,7 @@ pub fn spawn_client(info: ClientInfo) {
         id: info.id,
         server: info.server.clone(),
         conn: info.tcp,
-        recv,
+        rx: recv,
     };
 
     let (my_send, my_recv) = oneshot::channel();
@@ -68,7 +70,7 @@ pub fn spawn_client(info: ClientInfo) {
     let handle = ClientHandle {
         id: info.id,
         ip: info.ip,
-        chan: send,
+        tx: send,
         kill,
     };
 
@@ -96,8 +98,10 @@ async fn start_client(my_handle: oneshot::Receiver<ClientHandle>, mut data: Clie
 async fn client_loop(mut data: ClientData) -> Result<()> {
     loop {
         tokio::select! {
-            msg = data.recv.recv() => {
+            msg = data.rx.recv() => {
+                println!("Received message from server.");
                 if let Some(msg) = msg {
+                    println!("Sending message to client {:?}.", msg);
                     data.conn.write::<NetworkMessage>(&msg).await?;
                 }
             }
@@ -113,5 +117,8 @@ async fn client_loop(mut data: ClientData) -> Result<()> {
 fn internal(id: ClientId, msg: NetworkMessage) -> internal::ToServer {
     match msg {
         NetworkMessage::Message { message } => internal::ToServer::message(id, message),
+        _ => {
+            unreachable!()
+        }
     }
 }
