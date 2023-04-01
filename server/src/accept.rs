@@ -4,8 +4,9 @@ use std::net::SocketAddr;
 
 use crate::server::ServerHandle;
 
-use crate::client::Client;
-use common::message::ToServer;
+use crate::client::{spawn_client, ClientInfo};
+use crate::internal;
+use common::message::NetworkMessage;
 use tokio::net::TcpListener;
 
 pub async fn start_accept(bind: SocketAddr, mut handle: ServerHandle) {
@@ -13,28 +14,28 @@ pub async fn start_accept(bind: SocketAddr, mut handle: ServerHandle) {
     match res {
         Ok(()) => {}
         Err(err) => {
-            handle.send(ToServer::FatalError(err.to_string())).await;
+            handle
+                .send(internal::ToServer::FatalError(err.to_string()))
+                .await;
         }
     }
 }
 
-pub async fn accept_loop(bind: SocketAddr, handle: ServerHandle) -> Result<(), io::Error> {
+pub async fn accept_loop(bind: SocketAddr, server: ServerHandle) -> Result<(), io::Error> {
     let listen = TcpListener::bind(bind).await?;
 
     loop {
         let (tcp, ip) = listen.accept().await?;
 
-        let id = handle.next_id();
+        let id = server.next_id();
 
-        let mut client = Client {
+        let mut client = ClientInfo {
             ip,
             id,
             tcp: Connection::new(tcp),
-            handle: handle.clone(),
+            server: server.clone(),
         };
 
-        tokio::spawn(async move {
-            client.run().await;
-        });
+        spawn_client(client);
     }
 }

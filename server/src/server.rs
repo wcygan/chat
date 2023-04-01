@@ -1,6 +1,7 @@
 use crate::client::{ClientHandle, ClientId};
 use anyhow::Result;
-use common::message::ToServer;
+
+use crate::internal;
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
@@ -12,12 +13,12 @@ use tokio_utils::{ShutdownController, ShutdownMonitor};
 /// This struct is used by client actors to send messages to the server
 #[derive(Clone, Debug)]
 pub struct ServerHandle {
-    chan: Sender<ToServer>,
+    chan: Sender<internal::ToServer>,
     next_id: Arc<AtomicUsize>,
 }
 
 impl ServerHandle {
-    pub async fn send(&mut self, msg: ToServer) {
+    pub async fn send(&mut self, msg: internal::ToServer) {
         if self.chan.send(msg).await.is_err() {
             panic!("Main loop has shut down.");
         }
@@ -58,7 +59,10 @@ struct Data {
     clients: HashMap<ClientId, ClientHandle>,
 }
 
-async fn main_loop(mut recv: Receiver<ToServer>, mut monitor: ShutdownMonitor) -> Result<()> {
+pub async fn main_loop(
+    mut recv: Receiver<internal::ToServer>,
+    mut monitor: ShutdownMonitor,
+) -> Result<()> {
     let mut data = Data::default();
 
     while !monitor.is_shutdown() {
@@ -71,7 +75,8 @@ async fn main_loop(mut recv: Receiver<ToServer>, mut monitor: ShutdownMonitor) -
                 }
             },
             _ = monitor.recv() => {
-                eprintln!("Main loop has shut down.");
+                println!("Shutting down server");
+                // TODO: kill all clients
                 return Ok(());
             },
         }

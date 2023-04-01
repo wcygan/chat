@@ -5,6 +5,7 @@ use tokio::select;
 mod accept;
 mod args;
 mod client;
+mod internal;
 mod server;
 
 #[tokio::main]
