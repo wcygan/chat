@@ -5,6 +5,7 @@ edition = "2021"
 
 [dependencies]
 common = { path = "../common" }
+connection.workspace = true
 anyhow.workspace = true
 clap.workspace = true
 tokio.workspace = true

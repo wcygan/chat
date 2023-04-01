@@ -170,6 +170,7 @@ dependencies = [
  "anyhow",
  "clap",
  "common",
+ "connection",
  "tokio",
  "tokio-utils",
 ]
