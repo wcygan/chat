@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use std::io;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub enum FromServer {
@@ -14,4 +15,5 @@ pub enum ToServer {
     Join { name: String },
     Leave,
     KeepAlive,
+    FatalError(String),
 }
