@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]
-enum FromServer {
+pub enum FromServer {
     Message { message: String },
     Shutdown,
     Heartbeat,
@@ -9,7 +9,7 @@ enum FromServer {
 }
 
 #[derive(Serialize, Deserialize)]
-enum ToServer {
+pub enum ToServer {
     Message { message: String },
     Join { name: String },
     Leave,

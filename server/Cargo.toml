@@ -4,7 +4,9 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+common = { path = "../common" }
 anyhow.workspace = true
+connection.workspace = true
 clap.workspace = true
 tokio.workspace = true
 tokio-utils.workspace = true
