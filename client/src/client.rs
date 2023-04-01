@@ -23,17 +23,21 @@ impl Client {
                     println!("client shutting down");
                 }
                 res = self.conn.read::<NetworkMessage>() => {
-                    if let Ok(Some(msg)) = res {
-                        match msg {
-                            NetworkMessage::Message { message } => {
-                                println!("{}", message);
-                            }
-                            NetworkMessage::Shutdown => {
-                                println!("shutting down!");
-                                return;
-                            }
+                    match res {
+                        Ok(Some(NetworkMessage::Message { message })) => {
+                            println!("{}", message);
                         }
+                        Ok(Some(NetworkMessage::Shutdown)) => {
+                            println!("shutting down!");
+                            return;
+                        }
+                        Err(err) => {
+                            println!("error: {}", err);
+                            return;
+                        }
+                        _ => {}
                     }
+
                 }
                 line = stdin.recv() => {
                     if let Some(s) = line {

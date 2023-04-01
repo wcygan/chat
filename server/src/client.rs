@@ -106,8 +106,18 @@ async fn client_loop(mut data: ClientData) -> Result<()> {
                 }
             }
             msg = data.conn.read::<NetworkMessage>() => {
-                if let Ok(Some(msg)) = msg {
-                    data.server.send(internal(data.id, msg)).await;
+                match msg {
+                    Ok(Some(msg)) => {
+                        data.server.send(internal(data.id, msg)).await;
+                    }
+                    Ok(None) => {
+                        println!("Client {} has disconnected.", data.id.0);
+                        return Ok(());
+                    }
+                    Err(err) => {
+                        println!("Client {} has disconnected: {}.", data.id.0, err);
+                        return Ok(());
+                    }
                 }
             }
         }

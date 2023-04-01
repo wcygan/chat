@@ -115,8 +115,6 @@ pub async fn main_loop(
                     }
                 }
 
-                tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;
-
                 println!("Server shutdown complete.");
 
                 return Ok(());
