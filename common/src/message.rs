@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 pub enum FromServer {
     Message { message: String },
     Shutdown,
@@ -8,7 +8,7 @@ pub enum FromServer {
     Ack,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 pub enum ToServer {
     Message { message: String },
     Join { name: String },
