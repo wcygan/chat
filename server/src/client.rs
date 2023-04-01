@@ -1,7 +1,7 @@
 use connection::Connection;
 use std::net::SocketAddr;
 
-pub struct ClientId(usize);
+pub struct ClientId(pub usize);
 
 pub struct ClientHandle {
     id: ClientId,
