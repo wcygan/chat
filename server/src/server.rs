@@ -1,9 +1,7 @@
 use crate::args::Args;
 use anyhow::Result;
-use clap::Parser;
-use common::message::ToServer;
 use std::net::SocketAddr;
-use tokio::net::TcpListener;
+use tokio::net::{TcpListener, TcpStream};
 use tokio::select;
 use tokio::sync::mpsc;
 use tokio_utils::{ShutdownController, ShutdownMonitor};
@@ -11,17 +9,16 @@ use tokio_utils::{ShutdownController, ShutdownMonitor};
 pub struct Listener {
     listener: TcpListener,
     monitor: ShutdownMonitor,
-    chan: mpsc::Sender<(ToServer, SocketAddr)>,
+    chan: mpsc::Sender<(TcpStream, SocketAddr)>,
 }
 
 struct Processor {
     monitor: ShutdownMonitor,
-    chan: mpsc::Receiver<(ToServer, SocketAddr)>,
+    chan: mpsc::Receiver<(TcpStream, SocketAddr)>,
 }
 
 impl Listener {
-    pub async fn new(controller: &ShutdownController) -> Result<Self> {
-        let args = Args::parse();
+    pub async fn new(controller: &ShutdownController, args: Args) -> Result<Self> {
         let listener = TcpListener::bind(format!("127.0.0.1:{}", args.port)).await?;
 
         let (tx, rx) = mpsc::channel(100);
@@ -44,7 +41,13 @@ impl Listener {
         while !self.monitor.is_shutdown() {
             select! {
                 _ = self.monitor.recv() => {
-                    println!("server listener shutting down")
+                    println!("server listener shutting down");
+                    return;
+                }
+                res = self.listener.accept() => {
+                    if let Ok((socket, addr)) = res {
+                        println!("Accepted connection from: {}", addr);
+                    }
                 }
             }
         }
@@ -54,8 +57,16 @@ impl Listener {
 impl Processor {
     async fn run(&mut self) {
         while !self.monitor.is_shutdown() {
-            if let Some((msg, addr)) = self.chan.recv().await {
-                println!("Received message: {:?} from: {}", msg, addr);
+            select! {
+                _ = self.monitor.recv() => {
+                    println!("server processor shutting down");
+                    return;
+                }
+                res = self.chan.recv() => {
+                    if let Some((socket, addr)) = res {
+                        println!("Received connection from: {}", addr);
+                    }
+                }
             }
         }
     }
