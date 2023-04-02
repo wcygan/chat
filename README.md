@@ -10,13 +10,25 @@ Make sure that you [install Rust](https://www.rust-lang.org/tools/install) first
 
 Then use [Cargo](https://doc.rust-lang.org/cargo/) to install the server and client binaries:
 
+### Install the client
+
 ```bash
-cargo install --git https://github.com/wcygan/chat
+cargo install --git https://github.com/wcygan/chat client
 ```
 
-This will install two binaries:
-1. `chatcli` - the client
-2. `chatsrv` - the server
+This will install `chatcli`, the client binary
+
+### Install the server (Optional)
+
+If you are just interested in using the client, you can skip this step. 
+
+Installing the server will allow you to run your own chat server.
+
+```bash
+cargo install --git https://github.com/wcygan/chat server
+```
+
+This will install `chatsrv`, the server binary
 
 ## Usage
 
