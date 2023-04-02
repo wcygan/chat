@@ -10,3 +10,7 @@ connection.workspace = true
 clap.workspace = true
 tokio.workspace = true
 tokio-utils.workspace = true
+
+[[bin]]
+name = "chatsrv"
+path = "src/main.rs"
