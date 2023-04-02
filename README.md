@@ -2,8 +2,6 @@
 
 A chat server built on top of TCP
 
----
-
 ## Installation
 
 Make sure that you [install Rust](https://www.rust-lang.org/tools/install) first.
